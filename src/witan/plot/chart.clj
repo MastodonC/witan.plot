@@ -1,5 +1,6 @@
 (ns witan.plot.chart
   (:require [cljplot.build :as plotb]
+            [cljplot.config :as cfg]
             [cljplot.render :as plotr]
             [witan.plot.colors :as colors]
             [witan.plot.series :as ps]
@@ -34,7 +35,12 @@
                              legend-label ;; new
                              title]
                      :as chart-spec}]
-  (let [size (or size {:width 1539 :height 1037 :background colors/white}) ;; 1539x1037 is almost exactly the right size to go into the slide
+  (let [_config (swap! cfg/configuration
+                       (fn [c]
+                         (-> c
+                             (assoc-in [:legend :font] "Open Sans Bold")
+                             (assoc-in [:legend :font-size] 24))))
+        size (or size {:width 1539 :height 1037 :background colors/white}) ;; 1539x1037 is almost exactly the right size to go into the slide
         title-format (or (:format title) {:font-size 36 :font "Open Sans Bold" :font-style :bold :margin 36})]
     (-> (into [[:grid]] series) ;; this is good
         (plotb/preprocess-series)
