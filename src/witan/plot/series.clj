@@ -123,14 +123,13 @@
       ::series (sorted-map)
       ::legend-spec (sorted-set)})
     ([{::keys [series legend-spec]}]
-     ;; FIXME the maps will need to be sorted-by x-key here
      {::legend-spec (into []
                           (map (fn [series-key]
                                  (let [spec (series-specs series-key)]
                                    (try
                                      [:shape (:label spec (name series-key))
                                       {:color (:color spec)
-                                       :shape (:shape spec)
+                                       :shape (:legend-shape spec)
                                        :size 15
                                        :stroke {:size 4.0}}]
                                      (catch Exception e
