@@ -35,9 +35,3 @@
          domain
          (cycle palette)
          (cycle points))))
-
-(comment
-
-  (def test
-    (domain-colors-and-shapes ["A" "B" "C"]))
-  )

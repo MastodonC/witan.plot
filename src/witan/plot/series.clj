@@ -1,6 +1,5 @@
 (ns witan.plot.series
-  (:require [clojure2d.color :as color]
-            [net.cgrand.xforms :as x]))
+  (:require [clojure2d.color :as color]))
 
 (defn series-type
   "Determine if a series is actual or median/iqr/95 by looking at the
@@ -127,7 +126,7 @@
                           (map (fn [series-key]
                                  (let [spec (series-specs series-key)]
                                    (try
-                                     [:shape (:label spec (name series-key))
+                                     [:shape (:label spec series-key)
                                       {:color (:color spec)
                                        :shape (:legend-shape spec)
                                        :size 15
@@ -146,6 +145,20 @@
          (update-in [::series series-key] collect-data x-key v)
          (update ::legend-spec (fnil conj []) series-key)))))
 
+
+(defn line-ci-series-missing-is-0 [{::keys [data series-key x-key actual-key series-specs domain-map]}]
+  (transduce
+   (plot-friendly-kv-xf series-key x-key actual-key
+                        ;; :academic-year :calendar-year :population
+                        )
+   (line-ci-series-missing-is-0-rf-f
+    {::series-specs series-specs ;; ay-cs
+     ::domain-map domain-map #_(into (sorted-map)
+                                     (sequence
+                                      (map (fn [y z] [y z]))
+                                      (range 2015 2021)
+                                      (repeat 0)))})
+   data))
 
 (comment
 
