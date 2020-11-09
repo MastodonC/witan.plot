@@ -91,9 +91,16 @@
      (line median (assoc (series-specs k) :dash [2.0]))]))
 
 (defn collected-data->series [collected-data series-specs domain-map]
-  (case (series-type (val collected-data))
-    :actual (collected-data->actual-series collected-data series-specs domain-map)
-    :projected (collected-data->projected-series collected-data series-specs domain-map)))
+  (try
+    (case (series-type (val collected-data))
+      :actual (collected-data->actual-series collected-data series-specs domain-map)
+      :projected (collected-data->projected-series collected-data series-specs domain-map))
+    (catch Exception e
+      (throw (ex-info "Unable to create series."
+                      {:collected-data collected-data
+                       :series-specs series-specs
+                       :domain-map domain-map}
+                      e)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; data -> series
