@@ -8,12 +8,13 @@
             [witan.plot.series :as ps]))
 
 (defn zero-index-numerical-y-axes [prepped-data]
-  (let [[t [_bottom top]] (get-in prepped-data [:extents :y 0])]
+  (let [[t [_bottom top]] (get-in prepped-data [:extents :y 0])
+        margin 0.025]
     (if (= :numerical t)
-      (plotb/update-scale prepped-data :y :domain [0 (+ (* 0.025 top) top)])
+      (plotb/update-scale prepped-data :y :domain [0 (+ (* margin top) top)])
       prepped-data)))
 
-(defn update-chart-y-axis-ticks [chart-spec series]
+(defn update-chart-y-axis-ticks [chart-spec _series]
   (let [[t [_bottom top]] (get-in chart-spec [:extents :y 0])]
     (if (and (= :numerical t) (< top 10))
       (plotb/update-scale chart-spec :y :domain [0 10])
@@ -67,6 +68,9 @@
 
 (defn title->filename [title]
   (s/lower-case (str (s/replace title " " "_") ".png")))
+
+(defn has-series? [chart-spec]
+  (seq (::ps/series chart-spec)))
 
 (comment
 

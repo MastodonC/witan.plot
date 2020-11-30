@@ -28,7 +28,7 @@
     s))
 
 (defn domain-colors-and-shapes [domain]
-  (into (sorted-map)
+  (into {}
         (sequence
          (map (fn [d c s]
                 [d {:color c :shape s :legend-shape (legend-shape s)}]))

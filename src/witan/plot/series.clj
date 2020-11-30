@@ -18,9 +18,12 @@
     ::x-key (k x-key)}
    (assoc v ::actual (v actual-key))])
 
-(defn plot-friendly-kv-xf [series-key x-key actual-key]
-  (map (fn [x]
-         (plot-friendly-kv x series-key x-key actual-key))))
+(defn plot-friendly-kv-xf
+  ([series-key x-key actual-key]
+   (map (fn [x]
+          (plot-friendly-kv x series-key x-key actual-key))))
+  ([{::keys [series-key x-key actual-key]}]
+   (plot-friendly-kv-xf series-key x-key actual-key)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -68,7 +71,7 @@
 (defn line [data {:keys [color stroke dash size shape]
                   :or {stroke 4
                        size 15
-                       point \o}
+                       shape \o}
                   :as spec}]
   (try
     (let [line-spec {:color (color/color color) :point {:type shape :size size :stroke {:size stroke}} :stroke {:size stroke}}
@@ -77,7 +80,7 @@
                    (sort-by first data))
        line-spec])
     (catch Exception e
-      (throw (ex-info "Couldn't create line" {:data data :spec spec})))))
+      (throw (ex-info "Couldn't create line" {:data data :spec spec} e)))))
 
 (defn collected-data->actual-series [[k {:keys [actual]}] series-specs domain-map]
   ;; TODO: Use domain map to plug 0s
@@ -85,10 +88,9 @@
 
 (defn collected-data->projected-series [[k {:keys [low-95pc-bound q1 median q3 high-95pc-bound]}] series-specs _]
   ;; All values should be in the projection
-  (let [spec (series-specs k)]
-    [(ci high-95pc-bound low-95pc-bound (assoc (series-specs k) :alpha 25))
-     (ci q3 q1 (series-specs k))
-     (line median (assoc (series-specs k) :dash [2.0]))]))
+  [(ci high-95pc-bound low-95pc-bound (assoc (series-specs k) :alpha 25))
+   (ci q3 q1 (series-specs k))
+   (line median (assoc (series-specs k) :dash [2.0]))])
 
 (defn collected-data->series [collected-data series-specs domain-map]
   (try
@@ -125,18 +127,18 @@
   (fn
     ([]
      {::series-specs series-specs
-      ::domain-map domain-map
-      ::series (sorted-map)
-      ::legend-spec (sorted-set)})
+      ::domain-map   domain-map
+      ::series       (sorted-map)
+      ::legend-spec  (sorted-set)})
     ([{::keys [series legend-spec]}]
      {::legend-spec (into []
                           (map (fn [series-key]
                                  (let [spec (series-specs series-key)]
                                    (try
                                      [:shape (:label spec series-key)
-                                      {:color (:color spec)
-                                       :shape (:legend-shape spec)
-                                       :size 15
+                                      {:color  (:color spec)
+                                       :shape  (:legend-shape spec)
+                                       :size   15
                                        :stroke {:size 4.0}}]
                                      (catch Exception e
                                        (throw (ex-info "Couldn't create legend"
@@ -144,27 +146,19 @@
                                                        e)))))
                                  ))
                           legend-spec)
-      ::series (into []
-                     (mapcat (fn [s] (collected-data->series s series-specs domain-map)))
-                     series)})
+      ::series      (into []
+                          (mapcat (fn [s] (collected-data->series s series-specs domain-map)))
+                          series)})
     ([acc [{::keys [series-key x-key]} v]]
      (-> acc
          (update-in [::series series-key] collect-data x-key v)
          (update ::legend-spec (fnil conj []) series-key)))))
 
 
-(defn line-ci-series-missing-is-0 [{::keys [data series-key x-key actual-key series-specs domain-map]}]
+(defn line-ci-series-missing-is-0 [{::keys [data] :as config}]
   (transduce
-   (plot-friendly-kv-xf series-key x-key actual-key
-                        ;; :academic-year :calendar-year :population
-                        )
-   (line-ci-series-missing-is-0-rf-f
-    {::series-specs series-specs ;; ay-cs
-     ::domain-map domain-map #_(into (sorted-map)
-                                     (sequence
-                                      (map (fn [y z] [y z]))
-                                      (range 2015 2021)
-                                      (repeat 0)))})
+   (plot-friendly-kv-xf config)
+   (line-ci-series-missing-is-0-rf-f config)
    data))
 
 (comment
